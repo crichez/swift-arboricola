@@ -1,5 +1,5 @@
 //  
-//  ArboricolaTests.swift
+//  SortedDictionary.swift
 //  swift-arboricola
 //
 //  Copyright 2022 Christopher Richez
@@ -17,9 +17,6 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Arboricola
-
-class ArboricolaTests: XCTestCase {
+public struct SortedDictionary<Key, Value> where Key : Comparable {
     
 }
