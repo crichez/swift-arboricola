@@ -23,19 +23,20 @@ import XCTest
 
 class LeafNodeTests: XCTestCase {
     /// The storage type for this test case.
-    typealias Storage = ArboricolaStorage<Int, Double>
+    typealias TestLeaf = Leaf<Int, Double>
+    typealias TestLeafNode = LeafNode<Int, Double>
 
     /// Asserts the iterator returns all expected leaves.
     /// 
     /// This test manually assembles a list of leaves to avoid using the insert method.
     func testIterator() {
-        let leaf0 = Storage.Leaf(key: 0, value: 0.0)
-        let leaf1 = Storage.Leaf(key: 1, value: 1.0)
+        let leaf0 = TestLeaf(key: 0, value: 0.0)
+        let leaf1 = TestLeaf(key: 1, value: 1.0)
         leaf0.next = .leaf(leaf1)
-        let leaf2 = Storage.Leaf(key: 2, value: 2.0)
+        let leaf2 = TestLeaf(key: 2, value: 2.0)
         leaf1.next = .leaf(leaf2)
         
-        let node = Storage.LeafNode(first: leaf0, count: 3)
+        let node = TestLeafNode(first: leaf0, count: 3)
 
         var cursor = 0
         for leaf in node {
@@ -57,8 +58,8 @@ class LeafNodeTests: XCTestCase {
     /// 
     /// This test depends on `testIterator`.
     func testInsertOne() {
-        let firstLeaf = Storage.Leaf(key: 0, value: 0.0)
-        let node = Storage.LeafNode(first: firstLeaf, count: 1)
+        let firstLeaf = TestLeaf(key: 0, value: 0.0)
+        let node = TestLeafNode(first: firstLeaf, count: 1)
 
         let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
         XCTAssertTrue(inserted)
