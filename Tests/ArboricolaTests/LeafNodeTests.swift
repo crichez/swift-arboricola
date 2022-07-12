@@ -149,6 +149,8 @@ class LeafNodeTests: XCTestCase {
         XCTAssertEqual(node.first.value, 0.0)
     }
 
+    /// Asserts inserting a duplicate key into a leaf node with multiple leaves reports failure
+    /// and does not mutate the node.
     func testInsertDuplicateIntoMultiElementNode() {
         // Initialize a node with three leaves.
         let first = Leaf(key: 0, value: 0.0)
