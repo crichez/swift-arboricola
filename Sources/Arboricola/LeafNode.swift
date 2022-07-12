@@ -147,17 +147,20 @@ class LeafNode<Key: Comparable, Value> {
                 guard nextLeaf.key > newLeaf.key else { continue }
                 // If the next leaf's key is greater than the new one, fit it in between.
                 fit(newLeaf, after: currentLeaf, before: .leaf(nextLeaf))
-                // Report success.
+                // Increment count and report success.
+                count += 1
                 return (inserted: true, exceededCapacity: false)
             case .node(let nextNode):
                 // If we reach the end of this node, append it.
                 fit(newLeaf, after: currentLeaf, before: .node(nextNode))
-                // Report success.
+                // Increment count and report success.
+                count += 1
                 return (inserted: true, exceededCapacity: false)
             case .none:
                 // If we reach the end of the tree, append it.
                 fit(newLeaf, after: currentLeaf)
-                // Report success.
+                // Increment count and report success.
+                count += 1
                 return (inserted: true, exceededCapacity: false)
             }
         }
