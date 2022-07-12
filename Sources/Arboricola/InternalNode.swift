@@ -18,27 +18,10 @@
 //
 
 class InternalNode<Element: Comparable>: Collection {
-    class Record {
-        let node: Node<Element>
-        let separator: Element
-        var next: Next
-
-        enum Next {
-            case record(Record)
-            case node(Node<Element>)
-        }
-
-        init(node: Node<Element>, separator: Element, next: Next) {
-            self.node = node
-            self.separator = separator
-            self.next = next
-        }
-    }
-
-    var first: Record
+    var first: Record<Element>
     var count: Int
 
-    init(first: Record, count: Int) {
+    init(first: Record<Element>, count: Int) {
         self.first = first
         self.count = count
     }
@@ -64,7 +47,7 @@ class InternalNode<Element: Comparable>: Collection {
             return (false, exceededCapacity: true)
         }
         // Store the previous and current record for iteration.
-        var previousRecord: Record? = nil
+        var previousRecord: Record<Element>? = nil
         var currentRecord = first
         // Keep iterating until currentRecord is greater than the new node's separator.
         while currentRecord.separator < separator {
@@ -266,7 +249,7 @@ class InternalNode<Element: Comparable>: Collection {
         i + 1
     }
 
-    subscript(position: Int) -> Record {
+    subscript(position: Int) -> Record<Element> {
         var record = first
         for _ in 0 ..< position {
             switch record.next {

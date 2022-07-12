@@ -47,7 +47,7 @@ class ArboricolaStorage<Element: Comparable> {
                 // Create a new internal node to replace the root node.
                 // This new node references the previous leaf and the new split leaf.
                 let newNode = InternalNode<Element>(
-                    first: InternalNode.Record(
+                    first: Record(
                         node: .leaf(leafNode), 
                         separator: separator, 
                         next: .node(.leaf(newLeafNode))
@@ -70,7 +70,7 @@ class ArboricolaStorage<Element: Comparable> {
                 return true
             } else if exceeded {
                 let (newNode, separator) = internalNode.split()
-                let newRecord = InternalNode<Element>.Record(
+                let newRecord = Record(
                     node: .branch(internalNode), 
                     separator: separator, 
                     next: .node(.branch(newNode))
