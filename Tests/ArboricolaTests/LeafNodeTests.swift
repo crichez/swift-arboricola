@@ -181,18 +181,18 @@ class LeafNodeTests: XCTestCase {
         // Initialize and chain the maximum number of leaves in a node, and initialize the node.
         let first = Leaf(key: 0, value: 0)
         var previous = first
-        for number in 1..<50 {
+        for number in 1..<maxChildrenPerNode {
             let current = Leaf(key: number, value: number)
             previous.next = .leaf(current)
             previous = current
         }
-        let node = LeafNode(first: first, count: 50)
+        let node = LeafNode(first: first, count: maxChildrenPerNode)
 
         // Insert a new leaf with a unique key.
-        let (inserted, exceeded) = node.insert(key: 50, value: 50)
+        let (inserted, exceeded) = node.insert(key: maxChildrenPerNode, value: maxChildrenPerNode)
         XCTAssertFalse(inserted)
         XCTAssertTrue(exceeded)
-        XCTAssertEqual(node.count, 50)
+        XCTAssertEqual(node.count, maxChildrenPerNode)
 
         // Ensure the contents of the node have not changed.
         var cursor = 0
@@ -201,5 +201,6 @@ class LeafNodeTests: XCTestCase {
             XCTAssertEqual(leaf.value, cursor)
             cursor += 1
         }
+        XCTAssertEqual(cursor, maxChildrenPerNode)
     }
 }
