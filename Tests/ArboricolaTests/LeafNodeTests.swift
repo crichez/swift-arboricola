@@ -61,6 +61,7 @@ class LeafNodeTests: XCTestCase {
         let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
+        XCTAssertEqual(node.count, 2)
 
         switch node.first.next {
         case .leaf(let insertedLeaf):
@@ -83,6 +84,7 @@ class LeafNodeTests: XCTestCase {
         let (inserted, exceeded) = node.insert(key: 0, value: 0.0)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
+        XCTAssertEqual(node.count, 2)
 
         // Assert the leaf was inserted at the start of the node with the correct key and value.
         XCTAssertEqual(node.first.key, 0)
@@ -93,6 +95,38 @@ class LeafNodeTests: XCTestCase {
         case .leaf(let original):
             XCTAssertEqual(original.key, 1)
             XCTAssertEqual(original.value, 1.0)
+        default:
+            XCTFail("Unexpected end of node.")
+        }
+    }
+
+    /// Asserts inserting a leaf between two existing leaves behaves as expected.
+    func testInsertOneInMiddle() {
+        // Initialize two leaves and a node.
+        let first = Leaf(key: 0, value: 0.0)
+        let last = Leaf(key: 2, value: 2.0)
+        first.next = .leaf(last)
+        let node = LeafNode(first: first, count: 2)
+
+        // Insert a new leaf that should fit between the two existing ones.
+        let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
+        XCTAssertTrue(inserted)
+        XCTAssertFalse(exceeded)
+        XCTAssertEqual(node.count, 3)
+
+        // Assert the leaf was inserted between the two leaves.
+        switch node.first.next {
+        case .leaf(let insertedLeaf):
+            XCTAssertEqual(insertedLeaf.key, 1)
+            XCTAssertEqual(insertedLeaf.value, 1.0)
+            switch insertedLeaf.next {
+            case .leaf(let nextLeaf):
+                XCTAssertEqual(nextLeaf.key, last.key)
+                XCTAssertEqual(nextLeaf.value, last.value)
+                XCTAssertNil(nextLeaf.next)
+            default:
+                XCTFail("Unexpected end of node.")
+            }
         default:
             XCTFail("Unexpected end of node.")
         }
