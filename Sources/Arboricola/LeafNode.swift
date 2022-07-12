@@ -92,8 +92,8 @@ class LeafNode<Key: Comparable, Value> {
         after previous: Leaf<Key, Value>? = nil, 
         before next: Leaf<Key, Value>.Next? = nil
     ) {
-        let preconditionFailure = "both the previous and next values cannot be nil."
-        precondition(!(previous == nil && next == nil), preconditionFailure)
+        let preconditionFailure = "Both the previous and next values cannot be nil."
+        precondition(previous != nil || next != nil, preconditionFailure)
         // Check whether a preceding leaf was provided.
         if let previous = previous {
             // If so, point it to the new leaf.
@@ -127,7 +127,7 @@ class LeafNode<Key: Comparable, Value> {
 
         // Check the first leaf separately, prepending is a bit of a special case.
         if first.key > newLeaf.key {
-            fit(newLeaf, before: first.next)
+            fit(newLeaf, before: .leaf(first))
             count += 1
             return (inserted: true, exceededCapacity: false)
         } else if first.key == newLeaf.key {
