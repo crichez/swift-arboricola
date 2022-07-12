@@ -175,4 +175,31 @@ class LeafNodeTests: XCTestCase {
             XCTFail("Unexpected end of node.")
         }
     }
+
+    /// Asserts inserting a new leaf into a full node fails and responds as expected.
+    func testInsertIntoFullNode() {
+        // Initialize and chain the maximum number of leaves in a node, and initialize the node.
+        let first = Leaf(key: 0, value: 0)
+        var previous = first
+        for number in 1..<50 {
+            let current = Leaf(key: number, value: number)
+            previous.next = .leaf(current)
+            previous = current
+        }
+        let node = LeafNode(first: first, count: 50)
+
+        // Insert a new leaf with a unique key.
+        let (inserted, exceeded) = node.insert(key: 50, value: 50)
+        XCTAssertFalse(inserted)
+        XCTAssertTrue(exceeded)
+        XCTAssertEqual(node.count, 50)
+
+        // Ensure the contents of the node have not changed.
+        var cursor = 0
+        for leaf in node {
+            XCTAssertEqual(leaf.key, cursor)
+            XCTAssertEqual(leaf.value, cursor)
+            cursor += 1
+        }
+    }
 }
