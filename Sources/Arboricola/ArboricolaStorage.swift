@@ -19,9 +19,9 @@
 
 var maxChildrenPerNode: Int { 50 }
 
-class ArboricolaStorage<Key, Value> where Key : Comparable {
+class ArboricolaStorage<Element: Comparable> {
     /// The root node of the storage tree.
-    var rootNode: Node<Key, Value>?
+    var rootNode: Node<Element>?
 
     /// Initializes an empty storage tree.
     init() {
@@ -32,12 +32,12 @@ class ArboricolaStorage<Key, Value> where Key : Comparable {
     static var maxChildrenPerNode: Int { 50 }
 
     /// Inserts the provided key-value pair into the tree.
-    func insert(key: Key, value: Value) -> Bool {
+    func insert(_ element: Element) -> Bool {
         // Check the nature of the root node.
         switch rootNode {
         case .leaf(let leafNode):
             // If it's a leaf, try inserting into that leaf.
-            let (inserted, exceeded) = leafNode.insert(key: key, value: value)
+            let (inserted, exceeded) = leafNode.insert(element)
             if inserted { 
                 // If we succeed, return true.
                 return true 
@@ -46,7 +46,7 @@ class ArboricolaStorage<Key, Value> where Key : Comparable {
                 let (newLeafNode, separator) = leafNode.split()
                 // Create a new internal node to replace the root node.
                 // This new node references the previous leaf and the new split leaf.
-                let newNode = InternalNode<Key, Value>(
+                let newNode = InternalNode<Element>(
                     first: InternalNode.Record(
                         node: .leaf(leafNode), 
                         separator: separator, 
@@ -58,31 +58,32 @@ class ArboricolaStorage<Key, Value> where Key : Comparable {
                 self.rootNode = .branch(newNode)
                 // Try inserting the key-value pair again and report success or failure.
                 // This method will return false only if the key already exists in either leaf.
-                let (inserted, _) = newNode.insert(key: key, value: value)
+                let (inserted, _) = newNode.insert(element)
                 return inserted
             } else {
                 // The key already exists, return false.
                 return false
             }
         case .branch(let internalNode):
-            let (inserted, exceeded) = internalNode.insert(key: key, value: value)
+            let (inserted, exceeded) = internalNode.insert(element)
             if inserted {
                 return true
             } else if exceeded {
                 let (newNode, separator) = internalNode.split()
-                let newRecord = InternalNode<Key, Value>.Record(
+                let newRecord = InternalNode<Element>.Record(
                     node: .branch(internalNode), 
                     separator: separator, 
                     next: .node(.branch(newNode))
                 )
-                let newRootNode = Node<Key, Value>.branch(InternalNode<Key, Value>(first: newRecord, count: 1))
+                let newRootNode = Node<Element>
+                    .branch(InternalNode<Element>(first: newRecord, count: 1))
                 self.rootNode = newRootNode
-                return insert(key: key, value: value)
+                return insert(element)
             } else {
                 return false
             }
         case .none:
-            let newNode = LeafNode(first: Leaf(key: key, value: value, next: .none))
+            let newNode = LeafNode(first: Leaf(element: element, next: .none))
             self.rootNode = .leaf(newNode)
             return true
         }

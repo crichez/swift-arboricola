@@ -25,9 +25,9 @@ class LeafNodeTests: XCTestCase {
     /// Asserts the iterator returns all expected leaves.
     func testIterator() {
         // Initialize each leaf separately.
-        let first = Leaf(key: 0, value: 0.0)
-        let next = Leaf(key: 1, value: 1.0)
-        let last = Leaf(key: 2, value: 2.0)
+        let first = Leaf(element: 0)
+        let next = Leaf(element: 1)
+        let last = Leaf(element: 2)
 
         // Chain the leaves together.
         first.next = .leaf(next)
@@ -43,22 +43,19 @@ class LeafNodeTests: XCTestCase {
         let iteratedLeaves = Array(node)
 
         // Check the contents of each leaf against expectations.
-        XCTAssertEqual(iteratedLeaves[0].key, 0)
-        XCTAssertEqual(iteratedLeaves[0].value, 0.0)
-        XCTAssertEqual(iteratedLeaves[1].key, 1)
-        XCTAssertEqual(iteratedLeaves[1].value, 1.0)
-        XCTAssertEqual(iteratedLeaves[2].key, 2)
-        XCTAssertEqual(iteratedLeaves[2].value, 2.0)
+        XCTAssertEqual(iteratedLeaves[0].element, 0)
+        XCTAssertEqual(iteratedLeaves[1].element, 1)
+        XCTAssertEqual(iteratedLeaves[2].element, 2)
     }
 
     /// Asserts inserting a leaf at the end of a leaf node succeeds as expected.
     func testInsertOneAtEnd() {
         // Initialize a node with a single leaf.
-        let firstLeaf = Leaf(key: 0, value: 0.0)
+        let firstLeaf = Leaf(element: 0)
         let node = LeafNode(first: firstLeaf, count: 1)
 
         // Insert a new key-value pair that should fit after the first leaf.
-        let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
+        let (inserted, exceeded) = node.insert(1)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
         XCTAssertEqual(node.count, 2)
@@ -66,8 +63,7 @@ class LeafNodeTests: XCTestCase {
         switch node.first.next {
         case .leaf(let insertedLeaf):
             // Assert the leaf was inserted at the right position with the right key and value.
-            XCTAssertEqual(insertedLeaf.key, 1)
-            XCTAssertEqual(insertedLeaf.value, 1.0)
+            XCTAssertEqual(insertedLeaf.element, 1)
             XCTAssertNil(insertedLeaf.next)
         default:
             XCTFail("Unexpected end of node.")
@@ -77,24 +73,22 @@ class LeafNodeTests: XCTestCase {
     /// Asserts inserting a leaf at the beginning of a leaf node succeeds as expected.
     func testInsertOneAtStart() {
         // Initialize a node with a single leaf.
-        let firstLeaf = Leaf(key: 1, value: 1.0)
+        let firstLeaf = Leaf(element: 1)
         let node = LeafNode(first: firstLeaf, count: 1)
 
         // Insert a new key-value pair that should fit before the first leaf.
-        let (inserted, exceeded) = node.insert(key: 0, value: 0.0)
+        let (inserted, exceeded) = node.insert(0)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
         XCTAssertEqual(node.count, 2)
 
         // Assert the leaf was inserted at the start of the node with the correct key and value.
-        XCTAssertEqual(node.first.key, 0)
-        XCTAssertEqual(node.first.value, 0.0)
+        XCTAssertEqual(node.first.element, 0)
         
         // Assert the inserted leaf points to the original first leaf.
         switch node.first.next {
         case .leaf(let original):
-            XCTAssertEqual(original.key, 1)
-            XCTAssertEqual(original.value, 1.0)
+            XCTAssertEqual(original.element, 1)
         default:
             XCTFail("Unexpected end of node.")
         }
@@ -103,13 +97,13 @@ class LeafNodeTests: XCTestCase {
     /// Asserts inserting a leaf between two existing leaves behaves as expected.
     func testInsertOneInMiddle() {
         // Initialize two leaves and a node.
-        let first = Leaf(key: 0, value: 0.0)
-        let last = Leaf(key: 2, value: 2.0)
+        let first = Leaf(element: 0)
+        let last = Leaf(element: 2)
         first.next = .leaf(last)
         let node = LeafNode(first: first, count: 2)
 
         // Insert a new leaf that should fit between the two existing ones.
-        let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
+        let (inserted, exceeded) = node.insert(1)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
         XCTAssertEqual(node.count, 3)
@@ -117,12 +111,10 @@ class LeafNodeTests: XCTestCase {
         // Assert the leaf was inserted between the two leaves.
         switch node.first.next {
         case .leaf(let insertedLeaf):
-            XCTAssertEqual(insertedLeaf.key, 1)
-            XCTAssertEqual(insertedLeaf.value, 1.0)
+            XCTAssertEqual(insertedLeaf.element, 1)
             switch insertedLeaf.next {
             case .leaf(let nextLeaf):
-                XCTAssertEqual(nextLeaf.key, last.key)
-                XCTAssertEqual(nextLeaf.value, last.value)
+                XCTAssertEqual(nextLeaf.element, last.element)
                 XCTAssertNil(nextLeaf.next)
             default:
                 XCTFail("Unexpected end of node.")
@@ -136,32 +128,29 @@ class LeafNodeTests: XCTestCase {
     /// and does not mutate the node.
     func testInsertDuplicateIntoSingleElementNode() {
         // Initialize a node with a single leaf.
-        let leaf = Leaf(key: 0, value: 0.0)
+        let leaf = Leaf(element: 0)
         let node = LeafNode(first: leaf, count: 1)
 
         // Insert a leaf with the same key, but a different value.
-        let (inserted, exceeded) = node.insert(key: 0, value: 1.0)
+        let (inserted, exceeded) = node.insert(0)
         XCTAssertFalse(inserted)
         XCTAssertFalse(exceeded)
         XCTAssertEqual(node.count, 1)
-
-        // Check that the value of the existing leaf has not changed.
-        XCTAssertEqual(node.first.value, 0.0)
     }
 
     /// Asserts inserting a duplicate key into a leaf node with multiple leaves reports failure
     /// and does not mutate the node.
     func testInsertDuplicateIntoMultiElementNode() {
         // Initialize a node with three leaves.
-        let first = Leaf(key: 0, value: 0.0)
-        let next = Leaf(key: 1, value: 1.0)
-        let last = Leaf(key: 2, value: 2.0)
+        let first = Leaf(element: 0)
+        let next = Leaf(element: 1)
+        let last = Leaf(element: 2)
         first.next = .leaf(next)
         next.next = .leaf(last)
         let node = LeafNode(first: first, count: 3)
 
         // Insert a leaf with an existing key, but a different value.
-        let (inserted, exceeded) = node.insert(key: 1, value: -1.0)
+        let (inserted, exceeded) = node.insert(1)
         XCTAssertFalse(inserted)
         XCTAssertFalse(exceeded)
         XCTAssertEqual(node.count, 3)
@@ -169,8 +158,7 @@ class LeafNodeTests: XCTestCase {
         // Check that the value of the existing leaf has not changed.
         switch node.first.next {
         case .leaf(let insertedLeaf):
-            XCTAssertEqual(insertedLeaf.key, 1)
-            XCTAssertEqual(insertedLeaf.value, 1.0)
+            XCTAssertEqual(insertedLeaf.element, 1)
         default:
             XCTFail("Unexpected end of node.")
         }
@@ -179,17 +167,17 @@ class LeafNodeTests: XCTestCase {
     /// Asserts inserting a new leaf into a full node fails and responds as expected.
     func testInsertIntoFullNode() {
         // Initialize and chain the maximum number of leaves in a node, and initialize the node.
-        let first = Leaf(key: 0, value: 0)
+        let first = Leaf(element: 0)
         var previous = first
         for number in 1..<maxChildrenPerNode {
-            let current = Leaf(key: number, value: number)
+            let current = Leaf(element: number)
             previous.next = .leaf(current)
             previous = current
         }
         let node = LeafNode(first: first, count: maxChildrenPerNode)
 
         // Insert a new leaf with a unique key.
-        let (inserted, exceeded) = node.insert(key: maxChildrenPerNode, value: maxChildrenPerNode)
+        let (inserted, exceeded) = node.insert(maxChildrenPerNode)
         XCTAssertFalse(inserted)
         XCTAssertTrue(exceeded)
         XCTAssertEqual(node.count, maxChildrenPerNode)
@@ -197,8 +185,7 @@ class LeafNodeTests: XCTestCase {
         // Ensure the contents of the node have not changed.
         var cursor = 0
         for leaf in node {
-            XCTAssertEqual(leaf.key, cursor)
-            XCTAssertEqual(leaf.value, cursor)
+            XCTAssertEqual(leaf.element, cursor)
             cursor += 1
         }
         XCTAssertEqual(cursor, maxChildrenPerNode)
@@ -208,17 +195,17 @@ class LeafNodeTests: XCTestCase {
     /// and mutates the node as expected.
     func testRemoveOneFromFullNode() {
         // Initialize and chain the maximum number of leaves in a node, and initialize the node.
-        let first = Leaf(key: 0, value: 0)
+        let first = Leaf(element: 0)
         var previous = first
         for number in 1..<maxChildrenPerNode {
-            let current = Leaf(key: number, value: number)
+            let current = Leaf(element: number)
             previous.next = .leaf(current)
             previous = current
         }
         let node = LeafNode(first: first, count: maxChildrenPerNode)
 
         // Remove the second leaf in that node.
-        let (removed, unbalanced) = node.remove(key: 1)
+        let (removed, unbalanced) = node.remove(1)
         XCTAssertTrue(removed)
         XCTAssertFalse(unbalanced)
         XCTAssertEqual(node.count, maxChildrenPerNode - 1)
@@ -226,8 +213,7 @@ class LeafNodeTests: XCTestCase {
         // Check that the leaf was actually removed.
         switch node.first.next {
         case .leaf(let next):
-            XCTAssertEqual(next.key, 2)
-            XCTAssertEqual(next.value, 2)
+            XCTAssertEqual(next.element, 2)
         default:
             XCTFail("Unexpected end of node.")
         }
@@ -237,17 +223,17 @@ class LeafNodeTests: XCTestCase {
     /// not mutate the node.
     func testRemoveOneFromHalfFullNode() {
         // Initialize and chain the maximum number of leaves in a node, and initialize the node.
-        let first = Leaf(key: 0, value: 0)
+        let first = Leaf(element: 0)
         var previous = first
         for number in 1..<maxChildrenPerNode / 2 {
-            let current = Leaf(key: number, value: number)
+            let current = Leaf(element: number)
             previous.next = .leaf(current)
             previous = current
         }
         let node = LeafNode(first: first, count: maxChildrenPerNode / 2)
 
         // Remove the second leaf in that node.
-        let (removed, unbalanced) = node.remove(key: 1)
+        let (removed, unbalanced) = node.remove(1)
         XCTAssertFalse(removed)
         XCTAssertTrue(unbalanced)
         XCTAssertEqual(node.count, maxChildrenPerNode / 2)
@@ -255,8 +241,7 @@ class LeafNodeTests: XCTestCase {
         // Ensure the contents of the node have not changed.
         var cursor = 0
         for leaf in node {
-            XCTAssertEqual(leaf.key, cursor)
-            XCTAssertEqual(leaf.value, cursor)
+            XCTAssertEqual(leaf.element, cursor)
             cursor += 1
         }
         XCTAssertEqual(cursor, maxChildrenPerNode / 2)

@@ -17,18 +17,18 @@
 //  limitations under the License.
 //
 
-class InternalNode<Key: Comparable, Value>: Collection {
+class InternalNode<Element: Comparable>: Collection {
     class Record {
-        let node: Node<Key, Value>
-        let separator: Key
+        let node: Node<Element>
+        let separator: Element
         var next: Next
 
         enum Next {
             case record(Record)
-            case node(Node<Key, Value>)
+            case node(Node<Element>)
         }
 
-        init(node: Node<Key, Value>, separator: Key, next: Next) {
+        init(node: Node<Element>, separator: Element, next: Next) {
             self.node = node
             self.separator = separator
             self.next = next
@@ -54,7 +54,10 @@ class InternalNode<Key: Comparable, Value>: Collection {
     /// - Returns:
     /// A tuple where `inserted` reports whether the node was inserted, 
     /// and `exceededCapacity` reports whether this node was full before insertion.
-    func insert(node: Node<Key, Value>, separatedBy key: Key) -> (inserted: Bool, exceededCapacity: Bool) {
+    func insert(
+        node: Node<Element>, 
+        separatedBy separator: Element
+    ) -> (inserted: Bool, exceededCapacity: Bool) {
         // Ensure this node is not full.
         guard count < maxChildrenPerNode else {
             // If it is, return now.
@@ -64,7 +67,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
         var previousRecord: Record? = nil
         var currentRecord = first
         // Keep iterating until currentRecord is greater than the new node's separator.
-        while currentRecord.separator < key {
+        while currentRecord.separator < separator {
             // Check whether the current record is the end of the chain.
             switch currentRecord.next {
             case .record(let nextRecord):
@@ -74,7 +77,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
             case .node(let lastNode):
                 // If so, insert the new node at the end of the chain.
                 // Create a record that references the final node and the new one.
-                let newRecord = Record(node: lastNode, separator: key, next: .node(node))
+                let newRecord = Record(node: lastNode, separator: separator, next: .node(node))
                 // Replace the next element of the current record.
                 currentRecord.next = .record(newRecord)
                 // Increment count.
@@ -90,7 +93,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
             // Compose a new record that references the previous and new nodes.
             let newRecord = Record(
                 node: previousRecord.node, 
-                separator: key, 
+                separator: separator, 
                 next: .record(currentRecord))
             // Insert the new record.
             previousRecord.next = .record(newRecord)
@@ -105,7 +108,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
     }
 
     /// Splits this node and returns its greater half and separator.
-    func split() -> (newNode: InternalNode, separatedBy: Key) {
+    func split() -> (newNode: InternalNode, separatedBy: Element) {
         // Ensure we only call this method when appropriate.
         guard count == maxChildrenPerNode else {
             fatalError("tried to split a node that isn't full.")
@@ -123,10 +126,10 @@ class InternalNode<Key: Comparable, Value>: Collection {
     }
 
     /// Inserts the provided key-value pair into the tree.
-    func insert(key: Key, value: Value) -> (inserted: Bool, exceededCapacity: Bool) {
+    func insert(_ element: Element) -> (inserted: Bool, exceededCapacity: Bool) {
         // Store the current record for iteration.
         var currentRecord = first
-        while currentRecord.separator < key {
+        while currentRecord.separator < element {
             switch currentRecord.next {
             case .record(let nextRecord):
                 // If currentRecord.next is also a record, keep iterating.
@@ -135,7 +138,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                 // If currentRecord.next is a node, insert the new pair at this node.
                 switch lastNode {
                 case .leaf(let leafNode):
-                    let (inserted, exceeded) = leafNode.insert(key: key, value: value)
+                    let (inserted, exceeded) = leafNode.insert(element)
                     if inserted {
                         // If the child leaf node reports a successful insertion, do the same.
                         return (inserted: true, false)
@@ -149,7 +152,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                         )
                         if inserted {
                             // If the node insertion succeeds, try inserting the pair again.
-                            let (inserted, exceeded) = insert(key: key, value: value)
+                            let (inserted, exceeded) = insert(element)
                             if inserted {
                                 // Propagate success.
                                 return (inserted: true, false)
@@ -171,7 +174,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                     }
                 case .branch(let internalNode):
                     // Try inserting the new pair into the node.
-                    let (inserted, exceeded) = internalNode.insert(key: key, value: value)
+                    let (inserted, exceeded) = internalNode.insert(element)
                     if inserted {
                         return (true, false)
                     } else if exceeded {
@@ -181,7 +184,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                             separatedBy: separator
                         )
                         if inserted {
-                            let (inserted, _) = insert(key: key, value: value)
+                            let (inserted, _) = insert(element)
                             return (inserted, false)
                         } else if exceeded {
                             return (false, true)
@@ -198,7 +201,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
         switch currentRecord.node {
         case .leaf(let leafNode):
             // If it's a leaf node, try inserting the new key-value pair into it.
-            let (inserted, exceeded) = leafNode.insert(key: key, value: value)
+            let (inserted, exceeded) = leafNode.insert(element)
             if inserted {
                 // If that succeeds, report success.
                 return (inserted: true, false)
@@ -211,7 +214,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                     separatedBy: separator)
                 if inserted {
                     // If the new leaf node was inserted, try inserting the value again.
-                    let (inserted, _) = insert(key: key, value: value)
+                    let (inserted, _) = insert(element)
                     // If that succeeds, report success.
                     return (inserted: inserted, false)
                 } else if exceeded {
@@ -226,7 +229,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
             }
         case .branch(let internalNode):
             // If it's an internal node, delegate insertion to that node.
-            let (inserted, exceeded) = internalNode.insert(key: key, value: value)
+            let (inserted, exceeded) = internalNode.insert(element)
             if inserted {
                 // If the node reports success, do the same.
                 return (inserted: true, false)
@@ -238,7 +241,7 @@ class InternalNode<Key: Comparable, Value>: Collection {
                     node: .branch(newNode), 
                     separatedBy: separator)
                 if inserted {
-                    let (inserted, _) = insert(key: key, value: value)
+                    let (inserted, _) = insert(element)
                     return (inserted, false)
                 } else if exceeded {
                     return (false, true)

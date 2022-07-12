@@ -18,10 +18,10 @@
 //
 
 /// An enumeration that defines the two possible kinds of nodes.
-enum Node<Key: Comparable, Value> {
+enum Node<Element: Comparable> {
     /// A leaf node.
-    case leaf(LeafNode<Key, Value>)
+    case leaf(LeafNode<Element>)
 
     /// An internal or branch node.
-    case branch(InternalNode<Key, Value>)
+    case branch(InternalNode<Element>)
 }

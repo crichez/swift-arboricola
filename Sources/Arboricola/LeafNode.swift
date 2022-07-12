@@ -18,14 +18,14 @@
 //
 
 /// A linked list of leaves.
-class LeafNode<Key: Comparable, Value> {
+class LeafNode<Element: Comparable> {
     /// The first leaf in the node.
-    var first: Leaf<Key, Value>
+    var first: Leaf<Element>
 
     /// The number of leaves in the node.
     var count: Int
 
-    init(first: Leaf<Key, Value>, count: Int = 0) {
+    init(first: Leaf<Element>, count: Int = 0) {
         self.first = first
         self.count = count
     }
@@ -37,7 +37,7 @@ class LeafNode<Key: Comparable, Value> {
     /// 
     /// - Returns:
     /// A tuple that contains the new node and the key at which the new node starts.
-    func split() -> (newNode: LeafNode, separatedBy: Key) {
+    func split() -> (newNode: LeafNode, separatedBy: Element) {
         #if DEBUG
         guard count == maxChildrenPerNode else {
             fatalError("Requested a split on a node that isn't full yet.")
@@ -46,9 +46,9 @@ class LeafNode<Key: Comparable, Value> {
 
         // Get the last leaf.
         let lastLeafIndex = maxChildrenPerNode / 2 - 1
-        let lastLeaf: Leaf<Key, Value> = {
+        let lastLeaf: Leaf<Element> = {
             var cursor = 0
-            var leafToReturn: Leaf<Key, Value>? = nil
+            var leafToReturn: Leaf<Element>? = nil
             for leaf in self {
                 guard cursor == lastLeafIndex else { 
                     cursor += 1
@@ -60,7 +60,7 @@ class LeafNode<Key: Comparable, Value> {
         }()
 
         // Get the first leaf of the next node.
-        let newNodeFirstLeaf: Leaf<Key, Value> = {
+        let newNodeFirstLeaf: Leaf<Element> = {
             switch lastLeaf.next {
             case .leaf(let nextLeaf):
                 return nextLeaf
@@ -80,7 +80,7 @@ class LeafNode<Key: Comparable, Value> {
         count -= lastLeafIndex + 1
 
         // Return the new node and separator.
-        return (newNode: newNode, separatedBy: newNodeFirstLeaf.key)
+        return (newNode: newNode, separatedBy: newNodeFirstLeaf.element)
     }
 
     /// Inserts the provided leaf after another leaf but before its next pointer.
@@ -88,9 +88,9 @@ class LeafNode<Key: Comparable, Value> {
     /// If no previous leaf was provided, the leaf is inserted at the start of the node.
     /// If no next pointer was provided, the leaf is inserted at the end of the node.
     func fit(
-        _ new: Leaf<Key, Value>, 
-        after previous: Leaf<Key, Value>? = nil, 
-        before next: Leaf<Key, Value>.Next? = nil
+        _ new: Leaf<Element>, 
+        after previous: Leaf<Element>? = nil, 
+        before next: Leaf<Element>.Next? = nil
     ) {
         let preconditionFailure = "Both the previous and next values cannot be nil."
         precondition(previous != nil || next != nil, preconditionFailure)
@@ -115,7 +115,7 @@ class LeafNode<Key: Comparable, Value> {
     /// If the key already exists, `inserted` will be false.
     /// If the capacity of the node would be exceeded, `inserted` is false and
     /// `exceededCapacity` is true.
-    func insert(key: Key, value: Value) -> (inserted: Bool, exceededCapacity: Bool) {
+    func insert(_ element: Element) -> (inserted: Bool, exceededCapacity: Bool) {
         // Check whether the node is full.
         guard count < maxChildrenPerNode else { 
             // If so, report failure and request a split.
@@ -123,14 +123,14 @@ class LeafNode<Key: Comparable, Value> {
         }
 
         /// Compose the new leaf without a next pointer.
-        let newLeaf = Leaf(key: key, value: value)
+        let newLeaf = Leaf(element: element)
 
         // Check the first leaf separately, prepending is a bit of a special case.
-        if first.key > newLeaf.key {
+        if first.element > newLeaf.element {
             fit(newLeaf, before: .leaf(first))
             count += 1
             return (inserted: true, exceededCapacity: false)
-        } else if first.key == newLeaf.key {
+        } else if first.element == newLeaf.element {
             // If the new leaf's key already exists, do nothing.
             return (inserted: false, exceededCapacity: false)
         }
@@ -140,11 +140,11 @@ class LeafNode<Key: Comparable, Value> {
             switch currentLeaf.next {
             case .leaf(let nextLeaf):
                 // If the next leaf's key matches the new one, return failure.
-                guard nextLeaf.key != newLeaf.key else {
+                guard nextLeaf.element != newLeaf.element else {
                     return (inserted: false, exceededCapacity: false)
                 }
                 // If the next leaf's key is still lesser than the new one, continue iterating.
-                guard nextLeaf.key > newLeaf.key else { continue }
+                guard nextLeaf.element > newLeaf.element else { continue }
                 // If the next leaf's key is greater than the new one, fit it in between.
                 fit(newLeaf, after: currentLeaf, before: .leaf(nextLeaf))
                 // Increment count and report success.
@@ -179,14 +179,14 @@ class LeafNode<Key: Comparable, Value> {
     /// - Returns:
     /// A tuple where `removed` reports whether the key was removed, and `needsBalancing`
     /// is true if the node would have less than `maxChildrenPerNode / 2` leaves after removal.
-    func remove(key: Key) -> (removed: Bool, needsBalancing: Bool) {
+    func remove(_ element: Element) -> (removed: Bool, needsBalancing: Bool) {
         // Ensure the removal wouldn't result in an unbalanced node.
         guard count > maxChildrenPerNode / 2 else {
             return (removed: false, needsBalancing: true)
         }
 
         // Check the first leaf separately.
-        if first.key == key {
+        if first.element == element {
             switch first.next {
             case .leaf(let nextLeaf):
                 first = nextLeaf
@@ -196,7 +196,7 @@ class LeafNode<Key: Comparable, Value> {
                 // We asserted above that there are at least 2 leaves.
                 fatalError("This should never happen.")
             }
-        } else if first.key > key {
+        } else if first.element > element {
             // If the first key is already greater than the one to remove, 
             // the key isn't in this node.
             return (removed: false, needsBalancing: false)
@@ -206,15 +206,15 @@ class LeafNode<Key: Comparable, Value> {
         for leaf in self {
             switch leaf.next {
             case .leaf(let nextLeaf):
-                if nextLeaf.key < key {
+                if nextLeaf.element < element {
                     // If the next key is still lesser, keep iterating.
                     continue
-                } else if nextLeaf.key == key {
+                } else if nextLeaf.element == element {
                     // If the key matches, remove the link.
                     leaf.next = nextLeaf.next
                     count -= 1
                     return (removed: true, needsBalancing: false)
-                } else if nextLeaf.key > key {
+                } else if nextLeaf.element > element {
                     // If the key is greater, the key to remove isn't in this node.
                     return (removed: false, needsBalancing: false)
                 }
@@ -230,13 +230,13 @@ class LeafNode<Key: Comparable, Value> {
 
 extension LeafNode: Sequence {
     struct Iterator: IteratorProtocol {
-        var currentLeaf: Leaf<Key, Value>?
+        var currentLeaf: Leaf<Element>?
 
         init(node: LeafNode) {
             self.currentLeaf = node.first
         }
 
-        mutating func next() -> Leaf<Key, Value>? {
+        mutating func next() -> Leaf<Element>? {
             // Check whether we have a leaf to return.
             if let currentLeaf = currentLeaf {
                 switch currentLeaf.next {

@@ -18,12 +18,9 @@
 //
 
 /// A key-value pair with a reference to the next leaf.
-class Leaf<Key: Comparable, Value> {
-    /// The key stored in this leaf.
-    let key: Key
-
+class Leaf<Element: Comparable> {
     /// The value stored in this leaf.
-    let value: Value
+    let element: Element
 
     /// The location of the next element in the tree.
     /// 
@@ -31,9 +28,8 @@ class Leaf<Key: Comparable, Value> {
     var next: Next?
 
     /// Initializes a new leaf.
-    init(key: Key, value: Value, next: Next? = nil) {
-        self.key = key
-        self.value = value
+    init(element: Element, next: Next? = nil) {
+        self.element = element
         self.next = next
     }
 
@@ -43,26 +39,6 @@ class Leaf<Key: Comparable, Value> {
         case leaf(Leaf)
 
         /// The next element is in a the node attached to this case.
-        case node(Node<Key, Value>)
-    }
-
-    /// Whether this leaf is the last in its node.
-    var isLastLeafInNode: Bool {
-        switch next {
-        case .node(_), .none:
-            return true
-        case .leaf(_):
-            return false
-        }
-    }
-
-    /// Whether this leaf is the last in its tree.
-    var isLastLeafInTree: Bool {
-        switch next {
-        case .none:
-            return true
-        case .node(_), .leaf(_):
-            return false
-        }
+        case node(Node<Element>)
     }
 }
