@@ -131,4 +131,21 @@ class LeafNodeTests: XCTestCase {
             XCTFail("Unexpected end of node.")
         }
     }
+
+    /// Asserts inserting a duplicate key into a leaf node with a single leaf reports failure
+    /// and does not mutate the node.
+    func testInsertDuplicateIntoSingleElementNode() {
+        // Initialize a node with a single leaf.
+        let leaf = Leaf(key: 0, value: 0.0)
+        let node = LeafNode(first: leaf, count: 1)
+
+        // Insert a leaf with the same key, but a different value.
+        let (inserted, exceeded) = node.insert(key: 0, value: 1.0)
+        XCTAssertFalse(inserted)
+        XCTAssertFalse(exceeded)
+        XCTAssertEqual(node.count, 1)
+
+        // Check that the value of the existing leaf has not changed.
+        XCTAssertEqual(node.first.value, 0.0)
+    }
 }
