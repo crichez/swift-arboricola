@@ -18,7 +18,7 @@
 //
 
 /// A key-value pair with a reference to the next leaf.
-class Leaf<Key: Comparable, Value>: Comparable {
+class Leaf<Key: Comparable, Value> {
     /// The key stored in this leaf.
     let key: Key
 
@@ -30,33 +30,6 @@ class Leaf<Key: Comparable, Value>: Comparable {
     /// If this is the last element in the tree, this value is nil.
     var next: Next?
 
-    /// An enumeration that defines the location of the next element in the tree.
-    enum Next: Comparable {
-        /// The next element is in the leaf attached to this case.
-        case leaf(Leaf)
-
-        /// The next element is in a the node attached to this case.
-        case node(Node<Key, Value>)
-
-        static func < (lhs: Next, rhs: Next) -> Bool {
-            switch (lhs, rhs) {
-            case (.leaf(let lhs), .leaf(let rhs)):
-                return lhs.key < rhs.key
-            default:
-                return false
-            }
-        }
-
-        static func == (lhs: Next, rhs: Next) -> Bool {
-            switch (lhs, rhs) {
-            case (.leaf(let lhs), .leaf(let rhs)):
-                return lhs.key == rhs.key
-            default:
-                return false
-            }
-        }
-    }
-
     /// Initializes a new leaf.
     init(key: Key, value: Value, next: Next? = nil) {
         self.key = key
@@ -64,38 +37,32 @@ class Leaf<Key: Comparable, Value>: Comparable {
         self.next = next
     }
 
-    static func < (lhs: Leaf, rhs: Next?) -> Bool {
-        switch rhs {
-        case .leaf(let rhs):
-            return lhs < rhs
-        default:
-            return false
-        }
-    } 
+    /// An enumeration that defines the location of the next element in the tree.
+    enum Next {
+        /// The next element is in the leaf attached to this case.
+        case leaf(Leaf)
 
-    static func > (lhs: Leaf, rhs: Next?) -> Bool {
-        switch rhs {
-        case .leaf(let rhs):
-            return lhs > rhs
-        default:
-            return false
-        }
+        /// The next element is in a the node attached to this case.
+        case node(Node<Key, Value>)
     }
 
-    static func == (lhs: Leaf, rhs: Next?) -> Bool {
-        switch rhs {
-        case .leaf(let rhs):
-            return lhs == rhs
-        default:
+    /// Whether this leaf is the last in its node.
+    var isLastLeafInNode: Bool {
+        switch next {
+        case .node(_), .none:
+            return true
+        case .leaf(_):
             return false
         }
     }
 
-    static func == (lhs: Leaf, rhs: Leaf) -> Bool {
-        lhs.key == rhs.key
-    }
-
-    static func < (lhs: Leaf, rhs: Leaf) -> Bool {
-        lhs.key < rhs.key
+    /// Whether this leaf is the last in its tree.
+    var isLastLeafInTree: Bool {
+        switch next {
+        case .none:
+            return true
+        case .node(_), .leaf(_):
+            return false
+        }
     }
 }

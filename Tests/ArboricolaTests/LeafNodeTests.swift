@@ -22,62 +22,45 @@ import Arboricola
 import XCTest
 
 class LeafNodeTests: XCTestCase {
-    /// The storage type for this test case.
-    typealias TestLeaf = Leaf<Int, Double>
-    typealias TestLeafNode = LeafNode<Int, Double>
-
     /// Asserts the iterator returns all expected leaves.
     /// 
     /// This test manually assembles a list of leaves to avoid using the insert method.
     func testIterator() {
-        let leaf0 = TestLeaf(key: 0, value: 0.0)
-        let leaf1 = TestLeaf(key: 1, value: 1.0)
-        leaf0.next = .leaf(leaf1)
-        let leaf2 = TestLeaf(key: 2, value: 2.0)
-        leaf1.next = .leaf(leaf2)
-        
-        let node = TestLeafNode(first: leaf0, count: 3)
+        let first = Leaf(key: 0, value: 0.0)
+        let next = Leaf(key: 1, value: 1.0)
+        let last = Leaf(key: 2, value: 2.0)
 
-        var cursor = 0
-        for leaf in node {
-            switch cursor {
-            case 0: 
-                XCTAssertEqual(leaf, leaf0)
-            case 1:
-                XCTAssertEqual(leaf, leaf1)
-            case 2: 
-                XCTAssertEqual(leaf, leaf2)
-            default:
-                XCTFail("unexpected cursor value.")
-            }
-            cursor += 1
-        }
+        first.next = .leaf(next)
+        next.next = .leaf(last)
+        last.next = .none
+        
+        let node = LeafNode(first: first, count: 3)
+
+        let iteratedLeaves = Array(node)
+        XCTAssertEqual(iteratedLeaves[0].key, 0)
+        XCTAssertEqual(iteratedLeaves[0].value, 0.0)
+        XCTAssertEqual(iteratedLeaves[1].key, 1)
+        XCTAssertEqual(iteratedLeaves[1].value, 1.0)
+        XCTAssertEqual(iteratedLeaves[2].key, 2)
+        XCTAssertEqual(iteratedLeaves[2].value, 2.0)
     }
 
     /// Asserts the insert method inserts leaves as expected.
     /// 
     /// This test depends on `testIterator`.
     func testInsertOne() {
-        let firstLeaf = TestLeaf(key: 0, value: 0.0)
-        let node = TestLeafNode(first: firstLeaf, count: 1)
+        let firstLeaf = Leaf(key: 0, value: 0.0)
+        let node = LeafNode(first: firstLeaf, count: 1)
 
         let (inserted, exceeded) = node.insert(key: 1, value: 1.0)
         XCTAssertTrue(inserted)
         XCTAssertFalse(exceeded)
 
-        var cursor = 0
-        for leaf in node {
-            if cursor == 0 {
-                XCTAssertEqual(leaf, firstLeaf)
-            } else if cursor == 1 {
-                XCTAssertTrue(leaf == firstLeaf.next)
-                XCTAssertNil(leaf.next)
-                XCTAssertEqual(leaf.key, 1)
-                XCTAssertEqual(leaf.value, 1.0)
-            } else {
-                XCTFail("undexpected cursor value")
-            }
-            cursor += 1
+        switch node.first.next {
+        case .leaf(let insertedLeaf):
+            XCTAssertEqual(insertedLeaf.key, 1)
+        default:
+            XCTFail("Unexpected end of node.")
         }
     }
 }

@@ -18,7 +18,7 @@
 //
 
 /// A linked list of leaves.
-class LeafNode<Key: Comparable, Value>: Collection {
+class LeafNode<Key: Comparable, Value> {
     /// The first leaf in the node.
     var first: Leaf<Key, Value>
 
@@ -46,7 +46,18 @@ class LeafNode<Key: Comparable, Value>: Collection {
 
         // Get the last leaf.
         let lastLeafIndex = maxChildrenPerNode / 2 - 1
-        let lastLeaf = self[lastLeafIndex]
+        let lastLeaf: Leaf<Key, Value> = {
+            var cursor = 0
+            var leafToReturn: Leaf<Key, Value>? = nil
+            for leaf in self {
+                guard cursor == lastLeafIndex else { 
+                    cursor += 1
+                    continue 
+                }
+                leafToReturn = leaf
+            }
+            return leafToReturn!
+        }()
 
         // Get the first leaf of the next node.
         let newNodeFirstLeaf: Leaf<Key, Value> = {
@@ -72,6 +83,32 @@ class LeafNode<Key: Comparable, Value>: Collection {
         return (newNode: newNode, separatedBy: newNodeFirstLeaf.key)
     }
 
+    /// Inserts the provided leaf after another leaf but before its next pointer.
+    /// 
+    /// If no previous leaf was provided, the leaf is inserted at the start of the node.
+    /// If no next pointer was provided, the leaf is inserted at the end of the node.
+    func fit(
+        _ new: Leaf<Key, Value>, 
+        after previous: Leaf<Key, Value>? = nil, 
+        before next: Leaf<Key, Value>.Next? = nil
+    ) {
+        let preconditionFailure = "both the previous and next values cannot be nil."
+        precondition(!(previous == nil && next == nil), preconditionFailure)
+        // Check whether a preceding leaf was provided.
+        if let previous = previous {
+            // If so, point it to the new leaf.
+            previous.next = .leaf(new)
+        } else {
+            // If not, replace the first leaf.
+            first = new
+        }
+        // Check whether a next value was provided.
+        if let next = next {
+            // If so, point the new leaf to it.
+            new.next = next
+        }
+    }
+
     /// Inserts the provided key-value pair into the leaf node.
     /// 
     /// - Returns:
@@ -88,72 +125,69 @@ class LeafNode<Key: Comparable, Value>: Collection {
         /// Compose the new leaf without a next pointer.
         let newLeaf = Leaf(key: key, value: value)
 
-        // Iterate through all the leaves in the node.
-        for leaf in self {
-            if newLeaf < leaf {
-                // If the new leaf fits before the first one, insert it at the start.
-                newLeaf.next = .leaf(first)
-                first = newLeaf
-                count += 1
+        // Check the first leaf separately, prepending is a bit of a special case.
+        if first.key > newLeaf.key {
+            fit(newLeaf, before: first.next)
+            count += 1
+            return (inserted: true, exceededCapacity: false)
+        } else if first.key == newLeaf.key {
+            // If the new leaf's key already exists, do nothing.
+            return (inserted: false, exceededCapacity: false)
+        }
+        
+        // If the first leaf's key is before the new one, iterate until we find a greater leaf.
+        for currentLeaf in self {
+            switch currentLeaf.next {
+            case .leaf(let nextLeaf):
+                // If the next leaf's key matches the new one, return failure.
+                guard nextLeaf.key != newLeaf.key else {
+                    return (inserted: false, exceededCapacity: false)
+                }
+                // If the next leaf's key is still lesser than the new one, continue iterating.
+                guard nextLeaf.key > newLeaf.key else { continue }
+                // If the next leaf's key is greater than the new one, fit it in between.
+                fit(newLeaf, after: currentLeaf, before: .leaf(nextLeaf))
+                // Report success.
                 return (inserted: true, exceededCapacity: false)
-            } else if newLeaf > leaf.next {
-                // If the new leaf isn't contained between this leaf and the next, continue.
-                continue
-            } else if leaf == newLeaf {
-                // If the new leaf matches this one, it already exists.
-                return (inserted: false, exceededCapacity: false)
-            } else {
-                // If the leaf fits between this one and the next, insert it.
-                // This also works if this key is the greatest in the node.
-                newLeaf.next = leaf.next
-                leaf.next = .leaf(newLeaf)
-                count += 1
+            case .node(let nextNode):
+                // If we reach the end of this node, append it.
+                fit(newLeaf, after: currentLeaf, before: .node(nextNode))
+                // Report success.
+                return (inserted: true, exceededCapacity: false)
+            case .none:
+                // If we reach the end of the tree, append it.
+                fit(newLeaf, after: currentLeaf)
+                // Report success.
                 return (inserted: true, exceededCapacity: false)
             }
         }
+
+        // If we haven't returned by now, something is wrong.
         fatalError("This should never happen.")
     }
+}
 
-    var startIndex: Int { 
-        0
-    }
-
-    var endIndex: Int {
-        count
-    }
-
-    func index(after i: Int) -> Int {
-        i + 1
-    }
-
-    subscript(position: Int) -> Leaf<Key, Value> {
-        var cursor = 0
-        for leaf in self {
-            guard cursor == position else { 
-                cursor += 1
-                continue
-            }
-            return leaf
-        }
-        fatalError("Index out of range.")
-    }
-
+extension LeafNode: Sequence {
     struct Iterator: IteratorProtocol {
-        var currentLeaf: Leaf<Key, Value>
+        var currentLeaf: Leaf<Key, Value>?
 
         init(node: LeafNode) {
             self.currentLeaf = node.first
         }
 
         mutating func next() -> Leaf<Key, Value>? {
-            let leafToReturn = currentLeaf
-            switch currentLeaf.next {
-            case .leaf(let nextLeaf):
-                currentLeaf = nextLeaf
-            case .node(_), .none:
+            // Check whether we have a leaf to return.
+            if let currentLeaf = currentLeaf {
+                switch currentLeaf.next {
+                case .leaf(let nextLeaf):
+                    self.currentLeaf = nextLeaf
+                case .node(_), .none:
+                    self.currentLeaf = nil
+                }
+                return currentLeaf
+            } else {
                 return nil
             }
-            return leafToReturn
         }
     }
 
