@@ -72,4 +72,29 @@ class LeafNodeTests: XCTestCase {
             XCTFail("Unexpected end of node.")
         }
     }
+
+    /// Asserts inserting a leaf at the beginning of a leaf node succeeds as expected.
+    func testInsertOneAtStart() {
+        // Initialize a node with a single leaf.
+        let firstLeaf = Leaf(key: 1, value: 1.0)
+        let node = LeafNode(first: firstLeaf, count: 1)
+
+        // Insert a new key-value pair that should fit before the first leaf.
+        let (inserted, exceeded) = node.insert(key: 0, value: 0.0)
+        XCTAssertTrue(inserted)
+        XCTAssertFalse(exceeded)
+
+        // Assert the leaf was inserted at the start of the node with the correct key and value.
+        XCTAssertEqual(node.first.key, 0)
+        XCTAssertEqual(node.first.value, 0.0)
+        
+        // Assert the inserted leaf points to the original first leaf.
+        switch node.first.next {
+        case .leaf(let original):
+            XCTAssertEqual(original.key, 1)
+            XCTAssertEqual(original.value, 1.0)
+        default:
+            XCTFail("Unexpected end of node.")
+        }
+    }
 }
