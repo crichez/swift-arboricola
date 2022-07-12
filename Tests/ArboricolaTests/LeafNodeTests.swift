@@ -148,4 +148,29 @@ class LeafNodeTests: XCTestCase {
         // Check that the value of the existing leaf has not changed.
         XCTAssertEqual(node.first.value, 0.0)
     }
+
+    func testInsertDuplicateIntoMultiElementNode() {
+        // Initialize a node with three leaves.
+        let first = Leaf(key: 0, value: 0.0)
+        let next = Leaf(key: 1, value: 1.0)
+        let last = Leaf(key: 2, value: 2.0)
+        first.next = .leaf(next)
+        next.next = .leaf(last)
+        let node = LeafNode(first: first, count: 3)
+
+        // Insert a leaf with an existing key, but a different value.
+        let (inserted, exceeded) = node.insert(key: 1, value: -1.0)
+        XCTAssertFalse(inserted)
+        XCTAssertFalse(exceeded)
+        XCTAssertEqual(node.count, 3)
+
+        // Check that the value of the existing leaf has not changed.
+        switch node.first.next {
+        case .leaf(let insertedLeaf):
+            XCTAssertEqual(insertedLeaf.key, 1)
+            XCTAssertEqual(insertedLeaf.value, 1.0)
+        default:
+            XCTFail("Unexpected end of node.")
+        }
+    }
 }
