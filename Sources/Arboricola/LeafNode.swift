@@ -171,27 +171,20 @@ class LeafNode<Element: Comparable> {
 
     /// Removes the provided key from the node.
     /// 
-    /// If a node would become unbalanced from the requested removal operation, it reports
-    /// so and does not mutate itself.
+    /// This operation does not enforce the minimum children per node floor.
+    /// The caller should ensure the node is balanced after removing a leaf.
     /// 
     /// - Parameter key: the key to remove from the node.
     /// 
-    /// - Returns:
-    /// A tuple where `removed` reports whether the key was removed, and `needsBalancing`
-    /// is true if the node would have less than `maxChildrenPerNode / 2` leaves after removal.
-    func remove(_ element: Element) -> (removed: Bool, needsBalancing: Bool) {
-        // Ensure the removal wouldn't result in an unbalanced node.
-        guard count > maxChildrenPerNode / 2 else {
-            return (removed: false, needsBalancing: true)
-        }
-
+    /// - Returns: True if the element was removed.
+    func remove(_ element: Element) -> Bool {
         // Check the first leaf separately.
         if first.element == element {
             switch first.next {
             case .leaf(let nextLeaf):
                 first = nextLeaf
                 count -= 1
-                return (removed: true, needsBalancing: false)
+                return true
             default:
                 // We asserted above that there are at least 2 leaves.
                 fatalError("This should never happen.")
@@ -199,7 +192,7 @@ class LeafNode<Element: Comparable> {
         } else if first.element > element {
             // If the first key is already greater than the one to remove, 
             // the key isn't in this node.
-            return (removed: false, needsBalancing: false)
+            return false
         }
 
         // Iterate through the node and look for a match.
@@ -213,14 +206,14 @@ class LeafNode<Element: Comparable> {
                     // If the key matches, remove the link.
                     leaf.next = nextLeaf.next
                     count -= 1
-                    return (removed: true, needsBalancing: false)
+                    return true
                 } else if nextLeaf.element > element {
                     // If the key is greater, the key to remove isn't in this node.
-                    return (removed: false, needsBalancing: false)
+                    return false
                 }
             default:
                 // If we reach the end of the node, the key to remove isn't in this node.
-                return (removed: false, needsBalancing: false)
+                return false
             }
         }
 

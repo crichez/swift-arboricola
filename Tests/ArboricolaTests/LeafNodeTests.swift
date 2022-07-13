@@ -205,9 +205,8 @@ class LeafNodeTests: XCTestCase {
         let node = LeafNode(first: first, count: maxChildrenPerNode)
 
         // Remove the second leaf in that node.
-        let (removed, unbalanced) = node.remove(1)
+        let removed = node.remove(1)
         XCTAssertTrue(removed)
-        XCTAssertFalse(unbalanced)
         XCTAssertEqual(node.count, maxChildrenPerNode - 1)
 
         // Check that the leaf was actually removed.
@@ -217,33 +216,5 @@ class LeafNodeTests: XCTestCase {
         default:
             XCTFail("Unexpected end of node.")
         }
-    }
-
-    /// Asserts removing a leaf from a node that is exactly half full reports failure and does
-    /// not mutate the node.
-    func testRemoveOneFromHalfFullNode() {
-        // Initialize and chain the maximum number of leaves in a node, and initialize the node.
-        let first = Leaf(element: 0)
-        var previous = first
-        for number in 1..<maxChildrenPerNode / 2 {
-            let current = Leaf(element: number)
-            previous.next = .leaf(current)
-            previous = current
-        }
-        let node = LeafNode(first: first, count: maxChildrenPerNode / 2)
-
-        // Remove the second leaf in that node.
-        let (removed, unbalanced) = node.remove(1)
-        XCTAssertFalse(removed)
-        XCTAssertTrue(unbalanced)
-        XCTAssertEqual(node.count, maxChildrenPerNode / 2)
-        
-        // Ensure the contents of the node have not changed.
-        var cursor = 0
-        for leaf in node {
-            XCTAssertEqual(leaf.element, cursor)
-            cursor += 1
-        }
-        XCTAssertEqual(cursor, maxChildrenPerNode / 2)
     }
 }
